@@ -12,7 +12,30 @@ from pathlib import Path
 import os
 current_folder = (Path(__file__).resolve().parent)
 
+#%% local folders!!!!! ADJUST THESE PATHS TO YOUR MACHINE
+_who_is_running = 'thomas'
+# _who_is_running = 'michiel'
+# _who_is_running = 'sara'
+# _who_is_running = 'steven'
 
+
+
+print("The path_handler is set to the local path structure of ", _who_is_running)
+
+if _who_is_running == 'thomas':
+    lu_lc_folder = "/home/thoverga/Documents/github/maps" 
+    
+if _who_is_running == 'michiel':
+    lu_lc_folder = "..." 
+
+if _who_is_running == 'sara':
+    lu_lc_folder = "..." 
+
+if _who_is_running == 'steven':
+    lu_lc_folder = "..." 
+    
+    
+    
 #%%Folders
 folders = {
     "dashboard_visuals": 
@@ -21,6 +44,7 @@ folders = {
     'data': os.path.join(current_folder, 'Data'),
     'landcover_scripts': os.path.join(current_folder, 'Landcover_script'),
     'Mbili_code': os.path.join(current_folder, 'Mbili_code'),
+    'meta_data_folder': os.path.join(current_folder, 'meta_data_scripts'),
     }
 
 #%% often used paths
