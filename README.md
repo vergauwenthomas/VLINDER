@@ -17,7 +17,7 @@ This folder contains the data that is often used i.e. Vlinder location and ident
 This folder contains all the scripts that generate data or visuals that are used in the VLINDER-dashboard. 
 
 ## Meta_data_script
-Here you can find a script that calculates the meta data (landcover, height, lcz) for a given location. Adjust the data file in this folder and execute the script. The output will appear in the folder. 
+Here you can find a script that calculates the meta data (landcover, height, lcz and SVF) for a given location. Adjust the data file in this folder and execute the script. The output will appear in the folder. 
 
 In order to use the meta datasets, you have to download the card material. This can easely be done by donwloading the `LU and LC maps` in the VLINDER ondrive database. 
 
