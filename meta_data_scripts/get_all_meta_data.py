@@ -18,6 +18,7 @@ Specifications:
     1) Height is calculated using a DEM map
     2) Landcover is calculated using the BBK map. If the coverage is not sufficient the ESM map is used. In the output one can find simplyfied aggregated landcover types. 
     3) The LCZ is obtained using the LCZ map of Europe.
+    4) An estimate of the SVF is made using a DEM map.
 
 
 
@@ -52,8 +53,14 @@ print('Meta data will be calculated for file ', location_file)
 output_file = os.path.join(path_handler.folders['meta_data_folder'], 'coordinates_file_with_meta_data.csv')
 
 
-
+#---------------------------------------------Landuse---------------------------------------------------------
 buffer_list = [50,100,150,250]
+
+#----------------------------------------------SVF------------------------------------------------------------
+
+local_radius= 20 #the max distance of the surroundings to what the SVF is calculated (in DEM units = meter)
+loc_buffer=2 #estimate of the precision of the station and the buffer radius that is excluded from the svf calculation. 
+num_directions=8 #the number of directions to be considerd in the calculation of the SVF (i.e. 4 is only looking in the wind directions)
 
 #%% Check data format
 
@@ -82,6 +89,12 @@ if not 'lon' in df.columns:
 else:
     lon_identifier = 'lon'
     
+
+
+
+
+
+
 
 
 #%% Find height
@@ -143,6 +156,124 @@ def find_height(stationdf, station_identifier, lat_identifier, lon_identifier, D
 
 df = find_height(df, station_identifier, lat_identifier, lon_identifier,
                  os.path.join(path_handler.lu_lc_folder, 'DEM/'))
+
+
+#%%
+
+
+def find_SVF(stationdf, station_identifier, lat_identifier, lon_identifier, DEM_folder, local_radius=20, loc_buffer=2, num_directions=8):    
+    """ This function makes an estimate on the SVF for the given locations. This estimate is done by using the DEM. 
+        IMPORTANT: the resolution of the DEM model should be in meter!! """
+    
+
+    print("Reading the DEM map and get SVF of stations ...")
+    station_geo = gpd.GeoDataFrame(stationdf, geometry=gpd.points_from_xy(stationdf[lon_identifier], stationdf[lat_identifier]))
+    station_geo = station_geo.set_crs(epsg=4326) #set coordinates to normal gps coordinates
+    
+    #EU-DEM v1.1 is in EPSG:3035
+    station_geo = station_geo.to_crs("EPSG:3035")
+    station_geo['raster_key'] = np.nan
+    
+    #make list of all DEM files in the DEM-folder
+    DEM_map_files = [os.path.join(DEM_folder,f) for f in os.listdir(DEM_folder) if os.path.isfile(os.path.join(DEM_folder, f))]
+    DEMs = pd.Series([rasterio.open(x) for x in DEM_map_files]).to_dict()
+    
+    def Which_map_to_use(station_geo, DEMs):
+        for index in DEMs:
+            raster = DEMs[index]
+            bounds = raster.bounds
+            for idx, row in station_geo.iterrows():
+                if ((row['geometry'].x < bounds.right) & (row['geometry'].x > bounds.left) &
+                    (row['geometry'].y > bounds.bottom) & (row['geometry'].y < bounds.top)):
+                    station_geo.loc[station_geo[station_identifier] == row[station_identifier], 'raster_key'] = raster
+        return station_geo
+    
+    station_geo = Which_map_to_use(station_geo, DEMs)
+    
+    
+    if not station_geo[station_geo['raster_key'] == np.nan].empty:
+        print('Problem, these stations are not included in the DEM domain:')
+        print(station_geo[station_geo['raster_key'] == np.nan])
+        
+    
+    
+
+    def get_SVF_from_local_DEM(local_array, local_radius, loc_buffer=2, num_directions=8):
+        alpha = 360.0/(num_directions)
+        
+        # find lowes point in buffer of radius 2 (map units = meter)
+        ref_height = local_array[local_radius - loc_buffer: local_radius + loc_buffer,
+                                 local_radius - loc_buffer: local_radius + loc_buffer].min()
+        
+        svf_df = pd.DataFrame()
+        svf_df['direction'] = list(range(num_directions))
+        svf_df['alpha'] = [x*alpha for x in svf_df['direction']]
+        
+        def max_phi_for_direction(row, local_array):
+            dir_alpha = row['alpha']
+            phi_list = []
+            for i in range(local_radius): #scan along a line
+                col_idx = round(i * math.sin(dir_alpha * (math.pi / 180.))) + local_radius
+                row_idx = local_radius - round(i * math.cos(dir_alpha * (math.pi / 180.)))
+                
+                dist = math.sqrt((abs(col_idx - local_radius))**2 + (abs(row_idx - local_radius))**2)
+                if (dist <= loc_buffer):
+                    continue
+            
+                relative_height = local_array[row_idx, col_idx] - ref_height
+                
+                if relative_height < 0 : #not to close to ref to avoid effect of the trotoir.
+                    relative_height = 0.
+                
+                phi = math.atan(relative_height/dist) * (180. / math.pi)
+                phi_list.append(phi)     
+            return max(phi_list)
+        
+        svf_df['phi_max'] = svf_df.apply(max_phi_for_direction, axis=1, local_array=local_array)
+        
+        svf = 1 - ((svf_df['phi_max'].sum())/(90 * 360))
+        return svf
+    
+    
+    
+
+    
+    used_rasters = station_geo['raster_key'].value_counts().index.to_list() #get a list of all used rasters
+    stationdf['svf'] = np.nan
+    
+    
+    for raster in used_rasters: #iterate over maps
+        height_array = raster.read(1)
+        sub_station_geo = station_geo[station_geo['raster_key'] == raster]
+        for _, df_row in sub_station_geo.iterrows(): #iterate over location on the map
+            spatial_point = df_row['geometry']
+            row, col = raster.index(spatial_point.x, spatial_point.y)
+    
+            local_array = height_array[row - local_radius : row + local_radius, 
+                                       col - local_radius : col + local_radius]
+            
+            svf = get_SVF_from_local_DEM(local_array,
+                                         local_radius, 
+                                         loc_buffer = loc_buffer,
+                                         num_directions = num_directions,)
+            
+            stationdf.loc[stationdf[station_identifier] == df_row[station_identifier], 'svf'] = svf
+        
+        raster.close()
+        del height_array
+        
+    return stationdf
+
+df = find_SVF(stationdf = df,
+                   station_identifier = station_identifier,
+                   lat_identifier = lat_identifier,
+                   lon_identifier = lon_identifier,
+                   DEM_folder = os.path.join(path_handler.lu_lc_folder, 'DEM/'),
+                   local_radius=local_radius,
+                   loc_buffer=loc_buffer,
+                   num_directions=num_directions)
+
+
 
 
 #%% Landcover
