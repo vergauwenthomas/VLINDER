@@ -10,7 +10,7 @@ Created on Tue Sep 14 15:57:56 2021
 
 from pathlib import Path
 import os
-current_folder = (Path(__file__).resolve().parent)
+current_folder = str(Path(__file__).resolve().parent)
 
 #%% local folders!!!!! ADJUST THESE PATHS TO YOUR MACHINE
 _who_is_running = 'thomas'
