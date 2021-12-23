@@ -1,0 +1,8 @@
+#data folders for figures
+Dashboard_visuals/map_plot/output/*
+
+
+
+
+#pycache
+__pycache__/*
