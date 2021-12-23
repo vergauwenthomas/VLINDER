@@ -20,8 +20,8 @@ import matplotlib.pyplot as plt
 import xarray as xr
 
 #%%
-datafolder = '/home/thoverga/Documents/VLINDER/vlinder_workshop_hitte/data/pathtester'
-outputfolder = '/home/thoverga/Documents/VLINDER/vlinder_workshop_hitte/data/output'
+datafolder = '/home/thoverga/fileserver/home/ncdf_archive_cordexbe'
+outputfolder = '/home/thoverga/fileserver/home/scratch/VLINDER_data/eurocordex-data'
 
 location_lat = 51.17559
 location_lon = 4.10411
