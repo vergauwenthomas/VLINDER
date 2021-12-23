@@ -23,7 +23,7 @@ import xarray as xr
 datafolder = '/home/thoverga/fileserver/home/ncdf_archive_cordexbe'
 outputfolder = '/home/thoverga/fileserver/home/scratch/VLINDER_data/eurocordex-data'
 
-vlinderdatafile = '/home/thoverga/Documents/VLINDER_github/VLINDER/Data/data.csv'
+vlinderdatafile = '/home/thoverga/fileserver/home/Documents/VLINDER_github/VLINDER/Data/data.csv'
 
 # location_lat = 51.17559
 # location_lon = 4.10411
@@ -58,10 +58,15 @@ settings = {
                 'vas':{
                         'name': 'N-wind',
                         'res': '6hr',
-                        }
+                        },
+                'uas':{
+                        'name': 'E-wind',
+                        'res': '6hr',
+                        },
+                        
             },
-    'senario': ['rcp26', 'rcp45'],
-    'runs': ['204001']
+    'senario': ['rcp26', 'rcp45', 'rcp85'],
+    'runs': ['200601', '204001', '207001']
     }
 
 
@@ -126,20 +131,20 @@ def read_eurocordex_at_coordinate_to_df(file, variable, sen, settings, lat, lon)
 
 #%% iterate over variables, senarios and runs
 
-for vlinderstation in stationlist[0:2]:
+for vlinderstation in stationlist:
     
     stationname = vlinderstation['station']
     location_lat = vlinderstation['lat']
     location_lon = vlinderstation['lon']
-    print("collecting data of ", stationname)
+    print("collecting data of ", stationname, flush=True)
     
 
     exportdf = pd.DataFrame()
     for variable in settings['variables']:
-        print("Field:  ", variable)
+        print("Field:  ", variable, flush=True)
         vardf = pd.DataFrame()
         for sen in settings['senario']:
-            print('Climate senario:  ', sen)
+            print('Climate senario:  ', sen, flush=True)
             senariodf = pd.DataFrame()
             for run in settings['runs']:
     			#build filepath
@@ -148,7 +153,7 @@ for vlinderstation in stationlist[0:2]:
                 experiment_folder = os.path.join(experiment_folder, 'CORDEX', 'output', 'be-04', 'RMIB-UGent', 'CNRM-CERFACS-CNRM-CM5', sen, 'r1i1p1', 'RMIB-UGent-ALARO-0', 'v1', settings['variables'][variable]['res'], variable)
     
                 files = [os.path.join(experiment_folder, f) for f in listdir(experiment_folder) if isfile(join(experiment_folder, f))]
-                for file in files[0:3]:
+                for file in files:
                     subdf = read_eurocordex_at_coordinate_to_df(file=file,
                                                                 variable=variable,
                                                                 settings=settings,
@@ -168,6 +173,9 @@ for vlinderstation in stationlist[0:2]:
     # print(exportdf.head())
 
     # write data
+    exportdf['station'] = stationname
+    exportdf['lat'] = location_lat
+    exportdf['lon'] = location_lon
 
     exportfile = os.path.join(outputfolder, stationname+'_cordexbe_data.csv')
 
