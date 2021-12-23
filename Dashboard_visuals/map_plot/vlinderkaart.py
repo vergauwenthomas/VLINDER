@@ -16,11 +16,14 @@ from pyproj import Proj, transform
 from bokeh.models.markers import Circle
 from bokeh.models import ColumnDataSource
 from bokeh.models.glyphs import Text
-from bokeh.io import export_png, output_notebook
+from bokeh.io import export_png
 from bokeh.models import Legend
 from bokeh.models import Arrow, OpenHead, NormalHead, VeeHead, Label
 import os, sys
 from pathlib import Path
+
+import selenium
+# import geckodriver
 
 #%%import path file
 main_repo_folder = (Path(__file__).resolve().parent.parent.parent)
@@ -37,10 +40,10 @@ savedirectory = os.path.join(path_handler.folders['dashboard_visuals']['map_plot
 #%% what station to plot
 
 
-vlinder_to_plot = 'vlinder28'
+vlinder_to_plot = 'vlinder32'
 with_stacked_barchart_bool = True
 
-plot_all_stations = True
+plot_all_stations = False
 
 
 #%% Import data
@@ -50,9 +53,13 @@ data = pd.read_csv(data_path)
 vlinderlijst = list(data['VLINDER'].unique())
 
 landcovers = ['groen', 'verhard', 'water'] #volgorde van belang voor de stack 
+
+
 #landcover_colors = ['green', 'red', 'blue'] #volgorde corresponderend met landcovers
-landcover_colors = ["#6ebd02","#8c8c8c", "#00afff"] #groen - grijs - blauw
-#landcover_colors = ["#6ebd02","#d12f06", "#00afff"] #groen - rood - blauw
+#landcover_colors = ["#6ebd02","#8c8c8c", "#00afff"] #groen - grijs - blauw
+landcover_colors = ["#6ebd02","#d12f06", "#00afff"] #groen - rood - blauw
+
+                    
 buffers = ['20', '50', '100', '250', '500']
 
 
@@ -99,13 +106,6 @@ def make_stacked_hist(station, data, landcovers = landcovers, landcover_colors =
     p.legend.location = "bottom_center"
     p.legend.orientation = "horizontal"
     
-    p.background_fill_alpha= 0.0
-    p.border_fill_alpha = 0.0
-    p.background_fill_color = None
-    p.border_fill_color = None
-    
-    
-    
 
     p.xgrid.grid_line_color = None
     p.axis.minor_tick_line_color = None
@@ -130,14 +130,10 @@ def make_stacked_hist(station, data, landcovers = landcovers, landcover_colors =
     p.legend.border_line_width = 3
     p.legend.border_line_color = "navy"
     p.legend.border_line_alpha = 0.5
-    #p.legend.background_fill_color = "grey"
-    p.legend.background_fill_alpha = 0.8
-
-    p.background_fill_color = "#000000"
-    p.border_fill_color = "#000000"
-    p.background_fill_alpha= 0.0
-    p.border_fill_alpha = 0.0
+   
     
+    p.background_fill_color = None
+    p.border_fill_color = None
     
     
     #save figure
@@ -317,6 +313,7 @@ def makefigure(station,optie,savedirectory,data, with_stacked_barchart = False, 
     
     if with_stacked_barchart:
         bar_im_location = make_stacked_hist(station, data)
+        print(bar_im_location)
         
         #figuur.image_url(url=[bar_im_location],anchor = 'top_right', x = ymax, y = xmax, w = 9000, h = 3000)
         figuur.image_url(url=[bar_im_location],anchor = 'top_right', x = ymax + 6400, y = xmax, w = 8000, h = 3000)
