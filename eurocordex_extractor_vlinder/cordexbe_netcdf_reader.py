@@ -32,10 +32,22 @@ settings = {
                 'tas':{
                         'name': 'temperature',
                         'res': '3hr',
+                        },
+                'hurs':{
+                        'name': 'relative_humidity',
+                        'res': '3hr',
+                        },
+                'pr':{
+                        'name': 'precipitation',
+                        'res': '3hr',
+                        },
+                'vas':{
+                        'name': 'N-wind',
+                        'res': '6hr',
                         }
             },
-    'senario': ['rcp26'],
-    'runs': ['200601']
+    'senario': ['rcp26', 'rcp45'],
+    'runs': ['204001']
     }
 
 
@@ -99,40 +111,46 @@ def read_eurocordex_at_coordinate_to_df(file, variable, sen, settings, lat, lon)
     return df
 
 #%% iterate over variables, senarios and runs
-
+exportdf = pd.DataFrame()
 for variable in settings['variables']:
-    vardf = pd.DataFrame()
-    for sen in settings['senario']:
-        for run in settings['runs']:
-            #build filepath
+	vardf = pd.DataFrame()
+	for sen in settings['senario']:
+		senariodf = pd.DataFrame()
+		for run in settings['runs']:
+			#build filepath
             
-            experiment_folder = os.path.join(datafolder, sen.upper() + '_be', run)
-            experiment_folder = os.path.join(experiment_folder, 'CORDEX', 'output', 'be-04', 'RMIB-UGent', 'CNRM-CERFACS-CNRM-CM5', sen, 'r1i1p1', 'RMIB-UGent-ALARO-0', 'v1', settings['variables'][variable]['res'], variable)
+			experiment_folder = os.path.join(datafolder, sen.upper() + '_be', run)
+			experiment_folder = os.path.join(experiment_folder, 'CORDEX', 'output', 'be-04', 'RMIB-UGent', 'CNRM-CERFACS-CNRM-CM5', sen, 'r1i1p1', 'RMIB-UGent-ALARO-0', 'v1', settings['variables'][variable]['res'], variable)
 
-            files = [os.path.join(experiment_folder, f) for f in listdir(experiment_folder) if isfile(join(experiment_folder, f))]
-            for file in files:
-            
-                subdf = read_eurocordex_at_coordinate_to_df(file=file,
+			files = [os.path.join(experiment_folder, f) for f in listdir(experiment_folder) if isfile(join(experiment_folder, f))]
+			for file in files[0:3]:
+				subdf = read_eurocordex_at_coordinate_to_df(file=file,
                                                             variable=variable,
                                                             settings=settings,
                                                             sen=sen,
                                                             lat = location_lat,
                                                             lon = location_lon)
-                vardf = vardf.append(subdf)
-    vardf = vardf.sort_index()
-    
+				senariodf = senariodf.append(subdf)
+		vardf = vardf.merge(senariodf, how='outer', left_index=True, right_index=True)
+		vardf = vardf.sort_index()
+	exportdf = exportdf.merge(vardf, how='outer', left_index=True, right_index=True)
 
-exportdf = vardf #nog updaten met andere variablen
+exportdf = exportdf.sort_index()
 
+print("max datetime: ", exportdf.index.max() )
+print("columns :", exportdf.columns)
+print('head: ')
+print(exportdf.head())
 #%% write data
 stationname = 'testvlinder'
 exportfile = os.path.join(outputfolder, stationname+'_cordexbe_data.csv')
 
+
 exportdf.to_csv(exportfile,
-                index=True,
-                sep=',',
-                float_format= "%.2f",
-                date_format=None)
+               index=True,
+               sep=',',
+               float_format= "%.2f",
+               date_format=None)
 
 
 
