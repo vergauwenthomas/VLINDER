@@ -23,8 +23,22 @@ import xarray as xr
 datafolder = '/home/thoverga/fileserver/home/ncdf_archive_cordexbe'
 outputfolder = '/home/thoverga/fileserver/home/scratch/VLINDER_data/eurocordex-data'
 
-location_lat = 51.17559
-location_lon = 4.10411
+vlinderdatafile = '/home/thoverga/Documents/VLINDER_github/VLINDER/Data/data.csv'
+
+# location_lat = 51.17559
+# location_lon = 4.10411
+#%%
+
+vlinderdata = pd.read_csv(vlinderdatafile)
+stationlist = []
+for _, row in vlinderdata.iterrows():
+    stationlist.append({
+                        'station': row['VLINDER'],
+                        'lat': row['lat'],
+                        'lon': row['lon']
+                        })
+
+
 #%%
 
 settings = {
@@ -111,46 +125,58 @@ def read_eurocordex_at_coordinate_to_df(file, variable, sen, settings, lat, lon)
     return df
 
 #%% iterate over variables, senarios and runs
-exportdf = pd.DataFrame()
-for variable in settings['variables']:
-	vardf = pd.DataFrame()
-	for sen in settings['senario']:
-		senariodf = pd.DataFrame()
-		for run in settings['runs']:
-			#build filepath
-            
-			experiment_folder = os.path.join(datafolder, sen.upper() + '_be', run)
-			experiment_folder = os.path.join(experiment_folder, 'CORDEX', 'output', 'be-04', 'RMIB-UGent', 'CNRM-CERFACS-CNRM-CM5', sen, 'r1i1p1', 'RMIB-UGent-ALARO-0', 'v1', settings['variables'][variable]['res'], variable)
 
-			files = [os.path.join(experiment_folder, f) for f in listdir(experiment_folder) if isfile(join(experiment_folder, f))]
-			for file in files[0:3]:
-				subdf = read_eurocordex_at_coordinate_to_df(file=file,
-                                                            variable=variable,
-                                                            settings=settings,
-                                                            sen=sen,
-                                                            lat = location_lat,
-                                                            lon = location_lon)
-				senariodf = senariodf.append(subdf)
-		vardf = vardf.merge(senariodf, how='outer', left_index=True, right_index=True)
-		vardf = vardf.sort_index()
-	exportdf = exportdf.merge(vardf, how='outer', left_index=True, right_index=True)
+for vlinderstation in stationlist[0:2]:
+    
+    stationname = vlinderstation['station']
+    location_lat = vlinderstation['lat']
+    location_lon = vlinderstation['lon']
+    print("collecting data of ", stationname)
+    
 
-exportdf = exportdf.sort_index()
+    exportdf = pd.DataFrame()
+    for variable in settings['variables']:
+        print("Field:  ", variable)
+        vardf = pd.DataFrame()
+        for sen in settings['senario']:
+            print('Climate senario:  ', sen)
+            senariodf = pd.DataFrame()
+            for run in settings['runs']:
+    			#build filepath
+                
+                experiment_folder = os.path.join(datafolder, sen.upper() + '_be', run)
+                experiment_folder = os.path.join(experiment_folder, 'CORDEX', 'output', 'be-04', 'RMIB-UGent', 'CNRM-CERFACS-CNRM-CM5', sen, 'r1i1p1', 'RMIB-UGent-ALARO-0', 'v1', settings['variables'][variable]['res'], variable)
+    
+                files = [os.path.join(experiment_folder, f) for f in listdir(experiment_folder) if isfile(join(experiment_folder, f))]
+                for file in files[0:3]:
+                    subdf = read_eurocordex_at_coordinate_to_df(file=file,
+                                                                variable=variable,
+                                                                settings=settings,
+                                                                sen=sen,
+                                                                lat = location_lat,
+                                                                lon = location_lon)
+                    senariodf = senariodf.append(subdf)
+            vardf = vardf.merge(senariodf, how='outer', left_index=True, right_index=True)
+            vardf = vardf.sort_index()
+        exportdf = exportdf.merge(vardf, how='outer', left_index=True, right_index=True)
+    
+    exportdf = exportdf.sort_index()
 
-print("max datetime: ", exportdf.index.max() )
-print("columns :", exportdf.columns)
-print('head: ')
-print(exportdf.head())
-#%% write data
-stationname = 'testvlinder'
-exportfile = os.path.join(outputfolder, stationname+'_cordexbe_data.csv')
+    # print("max datetime: ", exportdf.index.max() )
+    # print("columns :", exportdf.columns)
+    # print('head: ')
+    # print(exportdf.head())
+
+    # write data
+
+    exportfile = os.path.join(outputfolder, stationname+'_cordexbe_data.csv')
 
 
-exportdf.to_csv(exportfile,
-               index=True,
-               sep=',',
-               float_format= "%.2f",
-               date_format=None)
+    exportdf.to_csv(exportfile,
+                    index=True,
+                    sep=',',
+                    float_format= "%.2f",
+                    date_format=None)
 
 
 
