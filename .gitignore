@@ -1,7 +1,8 @@
 #data folders for figures
 Dashboard_visuals/map_plot/output/*
 
-
+#cordexdata
+eurocordex_extractor_vlinder/vlinder01_cordexbe_data.csv
 
 
 #pycache
