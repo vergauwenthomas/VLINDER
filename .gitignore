@@ -1,9 +1,17 @@
-#data folders for figures
+#data folders and figures
 Dashboard_visuals/map_plot/output/*
 Data/*
 hittestress_workshop/output_data/*.csv
 hittestress_workshop/output_data/rayman_format/*.txt
 hittestress_workshop/Rayman_output/*.txt
+
+
+hittestress_workshop/rayman_scripts/fisheye_fotos/*.jpg
+hittestress_workshop/rayman_scripts/fisheye_fotos/*.bmp
+
+hittestress_workshop/rayman_scripts/fisheye_fotos/.ipynb_checkpoints
+hittestress_workshop/rayman_scripts/.ipynb_checkpoints
+
 
 #cordexdata
 eurocordex_extractor_vlinder/vlinder01_cordexbe_data.csv
