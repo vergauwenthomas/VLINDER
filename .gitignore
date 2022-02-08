@@ -1,5 +1,9 @@
 #data folders for figures
 Dashboard_visuals/map_plot/output/*
+Data/*
+hittestress_workshop/output_data/*.csv
+hittestress_workshop/output_data/rayman_format/*.txt
+hittestress_workshop/Rayman_output/*.txt
 
 #cordexdata
 eurocordex_extractor_vlinder/vlinder01_cordexbe_data.csv

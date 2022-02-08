@@ -1,32 +1,29 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Script to read the cordexbe local climate netcdf datafiles
+Script to extract timeseries from the CORDEXbe files, for a list of coordinates. 
 
 Created on Wed Dec 22 14:36:25 2021
 
 @author: thoverga
 """
-import os, sys
+import os
 from os import listdir
 from os.path import isfile, join
 
-
-
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
 import xarray as xr
 
 #%%
+
 datafolder = '/home/thoverga/fileserver/home/ncdf_archive_cordexbe'
 outputfolder = '/home/thoverga/fileserver/home/scratch/VLINDER_data/eurocordex-data'
 
 vlinderdatafile = '/home/thoverga/fileserver/home/Documents/VLINDER_github/VLINDER/Data/data.csv'
 
-# location_lat = 51.17559
-# location_lon = 4.10411
+
 #%%
 
 vlinderdata = pd.read_csv(vlinderdatafile)
@@ -68,16 +65,6 @@ settings = {
     'senario': ['rcp26', 'rcp45', 'rcp85'],
     'runs': ['200601', '204001', '207001']
     }
-
-
-
-#%% Checking the dataset
-# print(ds)
-# print(ds.dims)
-# print(variable, ' dimensions:')
-# print(ds[variable].size)
-# print(ds[variable].shape)
-# print(ds.attrs)
 
 
 #%%
