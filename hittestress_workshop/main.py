@@ -34,8 +34,8 @@ pd.options.mode.chained_assignment = None
 #%% IO
 
 
-max_consec = 30 #repetetive 5min update observations
-time_resolution = '30min' #resolution of the output files
+max_consec = path_handler.max_consec #repetetive 5min update observations
+time_resolution = path_handler.time_resolution #resolution of the output files
 
 
 #%% Path formers

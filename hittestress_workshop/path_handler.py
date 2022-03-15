@@ -46,8 +46,8 @@ fisheye_foto_format = 'jpg'
 #%% 
 
 stationnumbers = list(range(1, 59+1)) #the stations to include as a list of numbers
-
-
+time_resolution = '30min' #resolution of the output files
+max_consec=30  #repetetive 5min update observations
 
 
 paths_dict = {
