@@ -322,69 +322,69 @@ def make_timeseries_analysis_plot(station, station_and_file_dict, fig_file, scen
 
     
 #%% Test with barplots
-paths_dict = path_handler.paths_dict
+# paths_dict = path_handler.paths_dict
 
-for experiment in paths_dict:
-    print("Generate barplots for experiment: ", experiment)
+# for experiment in paths_dict:
+#     print("Generate barplots for experiment: ", experiment)
 
-    for scenario in paths_dict[experiment]['scenario']:
-        print('In scenario: ',scenario )
+#     for scenario in paths_dict[experiment]['scenario']:
+#         print('In scenario: ',scenario )
 
 
-        #create dict with vlindername and corresponding rayman output folder
-        vlinderlist = ['Vlinder' + str(x).zfill(2) for x in path_handler.stationnumbers]
+#         #create dict with vlindername and corresponding rayman output folder
+#         vlinderlist = ['Vlinder' + str(x).zfill(2) for x in path_handler.stationnumbers]
         
-        #make dictionaries and find which station have data available
-        available_stations = make_dirs_and_check_rayman_data_availability(vlinderlist,
-                                                                         experiment,
-                                                                         scenario)
+#         #make dictionaries and find which station have data available
+#         available_stations = make_dirs_and_check_rayman_data_availability(vlinderlist,
+#                                                                          experiment,
+#                                                                          scenario)
         
         
-        for station in available_stations:
-            print(station)
-            rayman_file = available_stations[station]
+#         for station in available_stations:
+#             print(station)
+#             rayman_file = available_stations[station]
 
-            fig_file = os.path.join(path_handler.db_location, station, 'figures', station + paths_dict[experiment]['scenario'][scenario]['barplot_postfix'])
-            print(fig_file)
+#             fig_file = os.path.join(path_handler.db_location, station, 'figures', station + paths_dict[experiment]['scenario'][scenario]['barplot_postfix'])
+#             print(fig_file)
             
-            period_att = paths_dict[experiment]['period_title_att']
+#             period_att = paths_dict[experiment]['period_title_att']
 
-            if (paths_dict[experiment]['scenario'][scenario]['scalar_to_add'] == 0):
-                scenario_att = '' #empty
-            else:
-                #(scenario: temperatuur +2.5°C)
-                scenario_att = '(scenario: ' + paths_dict[experiment]['scenario'][scenario]['var'].lower() + \
-                                ' +' + str(paths_dict[experiment]['scenario'][scenario]['scalar_to_add']) + '°C)'
+#             if (paths_dict[experiment]['scenario'][scenario]['scalar_to_add'] == 0):
+#                 scenario_att = '' #empty
+#             else:
+#                 #(scenario: temperatuur +2.5°C)
+#                 scenario_att = '(scenario: ' + paths_dict[experiment]['scenario'][scenario]['var'].lower() + \
+#                                 ' +' + str(paths_dict[experiment]['scenario'][scenario]['scalar_to_add']) + '°C)'
                 
-            #Barplot
-            make_barplot_of_station(station, rayman_file, fig_file, scenario_att, period_att)    
+#             #Barplot
+#             make_barplot_of_station(station, rayman_file, fig_file, scenario_att, period_att)    
             
             
-            #Timeseries plot
+#             #Timeseries plot
             
-            fig_file_timeseries_single_station = os.path.join(path_handler.db_location, station, 'figures', station + paths_dict[experiment]['scenario'][scenario]['timeseriesplot_postfix'])
-            make_timeseries_analysis_plot(station, available_stations, fig_file_timeseries_single_station, scenario_att )
+#             fig_file_timeseries_single_station = os.path.join(path_handler.db_location, station, 'figures', station + paths_dict[experiment]['scenario'][scenario]['timeseriesplot_postfix'])
+#             make_timeseries_analysis_plot(station, available_stations, fig_file_timeseries_single_station, scenario_att )
             
-            #Group timeseries plot
+#             #Group timeseries plot
             
-            for group in paths_dict[experiment]['scenario'][scenario]['comparison_stationnumbers']: #iterate over groups
-                all_members_available=True
+#             for group in paths_dict[experiment]['scenario'][scenario]['comparison_stationnumbers']: #iterate over groups
+#                 all_members_available=True
                 
-                stationsgroup = ['Vlinder' + str(nr).zfill(2) for nr in group] #groupnumbers to stationnames
-                print('Generate timeseries plot for group: ', stationsgroup)
+#                 stationsgroup = ['Vlinder' + str(nr).zfill(2) for nr in group] #groupnumbers to stationnames
+#                 print('Generate timeseries plot for group: ', stationsgroup)
                 
-                #check if data is available for each groupmember
-                for station in stationsgroup:
-                    if not station in available_stations:
-                        print('No data found for ', station, '. This group is skipped!!! ', stationsgroup)
-                        all_members_available=False
+#                 #check if data is available for each groupmember
+#                 for station in stationsgroup:
+#                     if not station in available_stations:
+#                         print('No data found for ', station, '. This group is skipped!!! ', stationsgroup)
+#                         all_members_available=False
 
-                if not all_members_available:
-                    continue #go to next group because at least one group member has missing data
+#                 if not all_members_available:
+#                     continue #go to next group because at least one group member has missing data
                 
             
                 
-                group_fig_path = os.path.join(path_handler.comp_plots_dir, 'Vlinders_' + '_'.join(map(str, group)) + paths_dict[experiment]['scenario'][scenario]['timeseriesplot_postfix'])
+#                 group_fig_path = os.path.join(path_handler.comp_plots_dir, 'Vlinders_' + '_'.join(map(str, group)) + paths_dict[experiment]['scenario'][scenario]['timeseriesplot_postfix'])
                 
-                make_timeseries_analysis_plot(stationsgroup, available_stations, group_fig_path, scenario_att )
+#                 make_timeseries_analysis_plot(stationsgroup, available_stations, group_fig_path, scenario_att )
             

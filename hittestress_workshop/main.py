@@ -6,7 +6,10 @@ Created on Tue Jan  4 13:14:04 2022
 Getting the data:
     1) To download the data use the Brian-Tool: https://vlinder.ugent.be/vlinderdata/multiple_vlinders.php
         (Cisco needed for VPN connection)
-    2) save the data as a csv file, and set variable 'datafile' as the path to that file
+    
+    2) save the data as a csv file, and put it inside the 'input_data_dir' (see path_handler)
+    3) put all rayman files togeter in a folder specified by 
+    
     
     3) specify an output folder
 
@@ -21,7 +24,12 @@ format vlinder data, apply consecutive check, makes datafiles per station (one f
 import os 
 import pandas as pd
 import path_handler
+import shutil
 
+
+import RayMan_output_visualisatie as raymanvis
+
+pd.options.mode.chained_assignment = None
 
 #%% IO
 
@@ -152,7 +160,8 @@ def rayman_output_to_google_format(path_to_rayman_output, stationname):
     df = df.rename(columns={'Ta': 'Temperatuur (°C)',
                             'RH': 'Relatieve Vochtigheid (%)',
                             'v': 'Windsnelheid (m/s)',
-                            'Gact': 'Straling (W/m²)'})
+                            'Gact': 'Straling (W/m²)',
+                            'PET': 'PET (°C)'})
     #set datetime as index
     df = df.set_index('datetime')
     df.index = df.index.to_series().dt.strftime('%d-%m-%Y %H:%M:%S')
@@ -178,13 +187,14 @@ for experiment in paths_dict:
     for scenario in paths_dict[experiment]['scenario']:
         print('In scenario: ',scenario )
         
+        infodict = paths_dict[experiment]['scenario'][scenario]
         #extract info from dict for readability
-        var = paths_dict[experiment]['scenario'][scenario]['var']
-        to_add = paths_dict[experiment]['scenario'][scenario]['scalar_to_add']
-        google_sheets_posf = paths_dict[experiment]['scenario'][scenario]['google_sheets_postfix']
-        input_to_rayman_posf = paths_dict[experiment]['scenario'][scenario]['rayman_input_postfix']
-        output_of_rayman_posf = paths_dict[experiment]['scenario'][scenario]['rayman_output_postfix']
-        output_of_rayman_in_google_form_posf = paths_dict[experiment]['scenario'][scenario]['google_sheets_rayman_output_postfix']
+        var = infodict['var']
+        to_add = infodict['scalar_to_add']
+        google_sheets_posf = infodict['google_sheets_postfix']
+        input_to_rayman_posf = infodict['rayman_input_postfix']
+        output_of_rayman_posf = infodict['rayman_output_postfix']
+        output_of_rayman_in_google_form_posf = infodict['google_sheets_rayman_output_postfix']
         
         
         df = df_default.copy()
@@ -237,11 +247,17 @@ for experiment in paths_dict:
             
             google_filename = os.path.join(station_datadir_mapper[station], station.capitalize() + google_sheets_posf )
             subdf_google_sheets[export_columns].to_csv( path_or_buf = google_filename,
-                                                       header=True,
-                                                       index=True,
-                                                       sep='\t', 
-                                                       decimal=',',
-                                                       encoding='utf-8')
+                                                        header=True,
+                                                        index=True,
+                                                        sep='\t', 
+                                                        decimal=',',
+                                                        encoding='utf-8')
+            # subdf_google_sheets[export_columns].to_excel(excel_writer = google_filename,
+            #                                            header=True,
+            #                                            index=True,
+            #                                            # 
+            #                                            )
+            
             
             
             
@@ -264,11 +280,16 @@ for experiment in paths_dict:
         
         
             #Check if rayman output is present, and if so make a google sheets compatible version in the rayman dir
-            rayman_output_file = os.path.join(station_raymandir_mapper[station], station.capitalize() + output_of_rayman_posf) #To read!!
+            #rayman_output_file = os.path.join(station_raymandir_mapper[station], station.capitalize() + output_of_rayman_posf) #To read!!
+            rayman_output_file = os.path.join(path_handler.rayman_data_dir,  station.capitalize() + output_of_rayman_posf)
+            
+            
             
             if (os.path.exists(rayman_output_file)): #Rayman output is available
                 print(station, ' Rayman output is available, i will make a google compatible version...')
                 
+                #copy titan data to this specific titan folder of the station
+                shutil.copy(rayman_output_file, station_raymandir_mapper[station])
                 #Read data and format it
                 rayman_in_google_df = rayman_output_to_google_format(rayman_output_file, station)
                 
@@ -281,3 +302,51 @@ for experiment in paths_dict:
                                            sep='\t', 
                                            decimal=',',
                                            encoding='utf-8')
+                
+                #generete station specific figures
+                
+                #Barplots
+               
+                barfig_path = os.path.join(station_raymandir_mapper[station], station.capitalize() + infodict['barplot_postfix'])
+                raymanvis.make_barplot_of_station(station = station,
+                                                  rayman_path_to_file=rayman_output_file,
+                                                  path_to_save_fig= barfig_path,
+                                                  scenario_att=infodict['fig_scenario_att'] ,
+                                                  periode_att=infodict['fig_time_att'])
+                #Timeseries
+                timefig_path = os.path.join(station_raymandir_mapper[station], station.capitalize() + infodict['timeseriesplot_postfix'])
+                raymanvis.make_timeseries_analysis_plot(station=station,
+                                                        station_and_file_dict={station: rayman_output_file},
+                                                        fig_file=timefig_path,
+                                                        scenario_att= infodict['fig_scenario_att'] )
+        #make group timeseries plot
+        if not bool(infodict['comparison_stationnumbers']):
+            continue #no group numbers given
+        
+        for group in infodict['comparison_stationnumbers']:
+            station_and_files_dict = {}
+            group_available=True
+            print(group)
+            for groupstationnumber in group:
+                groupstation = 'Vlinder' + str(groupstationnumber).zfill(2)
+                print(groupstation)
+                rayman_output_file = os.path.join(path_handler.rayman_data_dir,  groupstation + output_of_rayman_posf)
+                
+                if not (os.path.exists(rayman_output_file)):
+                    group_available = False
+                    print('GROUP: ', group, ' can not be computed because no titan data found for ', groupstation)
+                    continue
+                station_and_files_dict[groupstation] = rayman_output_file
+                
+            if group_available:
+                timeseries_output_file = os.path.join(path_handler.comp_plots_dir, 'Vlinders_' + '_'.join([str(x) for x in group]) + infodict['comparison_postfix'])
+                raymanvis.make_timeseries_analysis_plot(station=list(station_and_files_dict.keys()),
+                                                        station_and_file_dict=station_and_files_dict,
+                                                        fig_file=timeseries_output_file,
+                                                        scenario_att= infodict['fig_scenario_att'] )
+                
+#%% Generate google db
+# import data_folders_to_db_structure
+import fisheye_fotos_in_db
+import data_folders_to_brian_format
+import data_folders_to_db_structure
